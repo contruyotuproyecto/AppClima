@@ -1431,21 +1431,21 @@ async function fetchNews(cityName, countryCode) {
     const isSpanish = spanishCountries.includes(countryCode);
     const countryName = countryNames[countryCode] || countryCode;
 
-    // Inject Unix timestamp into RSS URL itself — forces rss2json to bypass its cache
-    // Google News ignores unknown params, but rss2json sees a unique URL each time
-    const ts = Math.floor(Date.now() / 1000);
+    // Use 'nocache=<epoch>' inside RSS URL to bypass rss2json's aggressive cache
+    // rss2json caches by full URL — a unique param forces a fresh fetch every time
+    const nocache = Date.now();
 
     let cityQuery, countryQuery, rssUrl, rssUrlFallback;
     if (isSpanish) {
       cityQuery = encodeURIComponent(`clima "${cityName}" ${countryName}`);
       countryQuery = encodeURIComponent(`clima tiempo hoy ${countryName}`);
-      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&ts=${ts}`;
-      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&ts=${ts}`;
+      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&nocache=${nocache}`;
+      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&nocache=${nocache}`;
     } else {
       cityQuery = encodeURIComponent(`weather "${cityName}" ${countryName}`);
       countryQuery = encodeURIComponent(`weather forecast today ${countryName}`);
-      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&ts=${ts}`;
-      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&ts=${ts}`;
+      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&nocache=${nocache}`;
+      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&nocache=${nocache}`;
     }
 
     const apiBase = 'https://api.rss2json.com/v1/api.json?rss_url=';
