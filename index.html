@@ -1431,23 +1431,24 @@ async function fetchNews(cityName, countryCode) {
     const isSpanish = spanishCountries.includes(countryCode);
     const countryName = countryNames[countryCode] || countryCode;
 
-    // Build two queries: specific (city) and fallback (country)
+    // Inject Unix timestamp into RSS URL itself — forces rss2json to bypass its cache
+    // Google News ignores unknown params, but rss2json sees a unique URL each time
+    const ts = Math.floor(Date.now() / 1000);
+
     let cityQuery, countryQuery, rssUrl, rssUrlFallback;
     if (isSpanish) {
       cityQuery = encodeURIComponent(`clima "${cityName}" ${countryName}`);
       countryQuery = encodeURIComponent(`clima tiempo hoy ${countryName}`);
-      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es`;
-      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es`;
+      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&ts=${ts}`;
+      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&ts=${ts}`;
     } else {
       cityQuery = encodeURIComponent(`weather "${cityName}" ${countryName}`);
       countryQuery = encodeURIComponent(`weather forecast today ${countryName}`);
-      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
-      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
+      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&ts=${ts}`;
+      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&ts=${ts}`;
     }
 
-    // Cache-busting timestamp to force fresh results from rss2json
-    const cacheBust = Math.floor(Date.now() / (15 * 60 * 1000)); // changes every 15 min
-    const apiBase = `https://api.rss2json.com/v1/api.json?_=${cacheBust}&rss_url=`;
+    const apiBase = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
     // Helper: sort items by pubDate descending (newest first)
     function sortByDate(items) {
