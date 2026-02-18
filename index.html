@@ -1435,15 +1435,18 @@ async function fetchNews(cityName, countryCode) {
     // rss2json caches by full URL — a unique param forces a fresh fetch every time
     const nocache = Date.now();
 
+    // after:YYYY-MM-DD filters Google News to last 24h natively - no "hoy/today" keyword needed
+    const afterDate = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
     let cityQuery, countryQuery, rssUrl, rssUrlFallback;
     if (isSpanish) {
-      cityQuery = encodeURIComponent(`clima "${cityName}" ${countryName}`);
-      countryQuery = encodeURIComponent(`clima tiempo hoy ${countryName}`);
+      cityQuery = encodeURIComponent(`clima "${cityName}" ${countryName} after:${afterDate}`);
+      countryQuery = encodeURIComponent(`clima ${countryName} after:${afterDate}`);
       rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&nocache=${nocache}`;
       rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es&nocache=${nocache}`;
     } else {
-      cityQuery = encodeURIComponent(`weather "${cityName}" ${countryName}`);
-      countryQuery = encodeURIComponent(`weather forecast today ${countryName}`);
+      cityQuery = encodeURIComponent(`weather "${cityName}" ${countryName} after:${afterDate}`);
+      countryQuery = encodeURIComponent(`weather ${countryName} after:${afterDate}`);
       rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&nocache=${nocache}`;
       rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en&nocache=${nocache}`;
     }
