@@ -675,8 +675,13 @@
     @media (max-width: 768px) {
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .details-grid { grid-template-columns: repeat(2, 1fr); }
-      .forecast-grid { grid-template-columns: repeat(3, 1fr); }
-      .forecast-grid .forecast-item:nth-child(n+4) { display: none; }
+      .forecast-grid {
+        grid-template-columns: repeat(5, minmax(85px, 1fr));
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.5rem;
+      }
+      /* forecast shows all 5 days, scrollable on mobile */
       .big-temp { font-size: 2.8rem; }
       .wcard-location h2 { font-size: 1.4rem; }
       .weather-main-card { padding: 1.25rem; }
@@ -695,11 +700,22 @@
       .details-grid { grid-template-columns: 1fr 1fr; }
       .chart-wrap { height: 170px; }
       #weatherMap { height: 220px; }
-      .forecast-grid { grid-template-columns: repeat(3, 1fr); }
+      .forecast-grid {
+        grid-template-columns: repeat(5, minmax(85px, 1fr));
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.5rem;
+      }
     }
     @media (max-width: 400px) {
-      .forecast-grid { grid-template-columns: repeat(2, 1fr); }
-      .forecast-grid .forecast-item:nth-child(n+3) { display: none; }
+      .forecast-grid {
+        grid-template-columns: repeat(5, minmax(90px, 1fr));
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 0.5rem;
+        gap: 0.5rem;
+      }
+      .forecast-item { min-width: 90px; }
     }
 
     /* ===== LEAFLET DARK OVERRIDE ===== */
@@ -752,7 +768,7 @@
   <div class="alert-banner" id="alertBanner">
     <i class="fas fa-triangle-exclamation"></i>
     <div class="alert-content">
-      <strong id="alertTitle">⚠️ Alerta climática</strong>
+      <strong id="alertTitle">Alerta climática</strong>
       <p id="alertText"></p>
     </div>
   </div>
@@ -1149,26 +1165,33 @@ function checkAlerts(data) {
   const alerts = [];
   const wid = weather[0].id;
 
-  // Temperatura alta: solo dispara si realmente es extremo según la unidad
-  if (unit === 'metric' && main.temp > 38) alerts.push('🌡️ Temperatura extremadamente alta. Mantente hidratado.');
-  if (unit === 'imperial' && main.temp > 104) alerts.push('🌡️ Temperatura extremadamente alta. Mantente hidratado.');
+  // Convertir siempre a Celsius para comparar (la API devuelve en la unidad seleccionada)
+  const tempC = unit === 'imperial' ? (main.temp - 32) * 5 / 9 : main.temp;
 
-  // Temperatura baja
-  if (unit === 'metric' && main.temp < 0) alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
-  if (unit === 'imperial' && main.temp < 32) alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
+  // Temperatura alta: > 38°C equivale a > 100.4°F
+  if (tempC > 38) alerts.push('🌡️ Temperatura extremadamente alta. Mantente hidratado.');
 
-  // Vientos fuertes — solo si supera 15 m/s (54 km/h), que es viento fuerte real
-  if (wind.speed > 15) alerts.push('💨 Vientos fuertes detectados (' + wind.speed.toFixed(0) + ' m/s).');
+  // Temperatura baja: < 0°C equivale a < 32°F
+  if (tempC < 0) alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
 
-  // Tormentas y condiciones extremas
+  // Vientos fuertes: wind.speed siempre viene en m/s desde la API independiente de la unidad
+  // 15 m/s = 54 km/h = 33 mph — viento fuerte real
+  if (wind.speed > 15) {
+    const wspd = unit === 'imperial'
+      ? (wind.speed * 2.237).toFixed(0) + ' mph'
+      : wind.speed.toFixed(0) + ' m/s';
+    alerts.push('💨 Vientos fuertes detectados (' + wspd + ').');
+  }
+
+  // Tormentas y condiciones extremas (basado en weather id, no en unidad)
   if (wid >= 200 && wid < 300) alerts.push('⚡ Tormenta eléctrica activa en la zona.');
   if (wid >= 900 && wid < 910) alerts.push('🌀 Condición meteorológica extrema detectada.');
 
-  // Humedad muy alta — subido a 95% para evitar falsos positivos en climas tropicales
+  // Humedad: igual en ambas unidades (%)
   if (main.humidity > 95) alerts.push('💧 Humedad extrema. Sensación de calor muy elevada.');
 
   if (alerts.length) {
-    $('alertTitle').textContent = '⚠️ ' + (alerts.length > 1 ? 'Múltiples alertas climáticas' : 'Alerta climática');
+    $('alertTitle').textContent = alerts.length > 1 ? 'Múltiples alertas climáticas' : 'Alerta climática';
     $('alertText').textContent = alerts.join(' · ');
     alertBanner.classList.add('active');
   } else {
@@ -1367,40 +1390,52 @@ async function fetchNews(cityName, countryCode) {
     newsCard.classList.add('active');
     $('newsList').innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Buscando noticias...</div>';
 
-    // Build search query: city + country + weather keywords
     const countryNames = {
       'CR':'Costa Rica','MX':'México','AR':'Argentina','CO':'Colombia',
       'PE':'Perú','CL':'Chile','VE':'Venezuela','EC':'Ecuador','BO':'Bolivia',
       'PY':'Paraguay','UY':'Uruguay','PA':'Panamá','SV':'El Salvador',
       'HN':'Honduras','NI':'Nicaragua','GT':'Guatemala','DO':'República Dominicana',
-      'CU':'Cuba','ES':'España','US':'Estados Unidos','GB':'Reino Unido',
-      'FR':'Francia','DE':'Alemania','IT':'Italia','BR':'Brasil',
-      'JP':'Japón','CN':'China','AU':'Australia','CA':'Canadá'
+      'CU':'Cuba','ES':'España','US':'United States','GB':'United Kingdom',
+      'FR':'France','DE':'Germany','IT':'Italy','BR':'Brasil',
+      'JP':'Japan','CN':'China','AU':'Australia','CA':'Canada'
     };
+
+    // Use English for non-Spanish countries for better results
+    const spanishCountries = ['CR','MX','AR','CO','PE','CL','VE','EC','BO','PY','UY','PA','SV','HN','NI','GT','DO','CU','ES'];
+    const isSpanish = spanishCountries.includes(countryCode);
     const countryName = countryNames[countryCode] || countryCode;
-    const query = encodeURIComponent(`clima ${cityName} ${countryName}`);
-    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=es&gl=${countryCode}&ceid=${countryCode}:es`;
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=5`;
+
+    let query, rssUrl;
+    if (isSpanish) {
+      query = encodeURIComponent(`clima ${cityName} ${countryName}`);
+      rssUrl = `https://news.google.com/rss/search?q=${query}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es`;
+    } else {
+      query = encodeURIComponent(`weather ${cityName} ${countryName}`);
+      rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
+    }
+
+    // rss2json free tier: no count param needed, returns 10 by default
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
 
     const res = await fetch(apiUrl);
-    if (!res.ok) throw new Error('No se pudieron cargar las noticias');
+    if (!res.ok) throw new Error('Error de red');
     const data = await res.json();
 
-    if (!data.items || data.items.length === 0) {
-      $('newsList').innerHTML = '<div class="news-empty">📰 No se encontraron noticias recientes para esta ubicación.</div>';
+    if (!data.items || data.items.length === 0 || data.status === 'error') {
+      $('newsList').innerHTML = '<div class="news-empty">📰 No se encontraron noticias para esta ubicación.</div>';
       return;
     }
 
-    // Filter last 24h and take up to 3
+    // Filter last 48h (more flexible) and take up to 3
     const now = Date.now();
-    const h24 = 24 * 60 * 60 * 1000;
+    const h48 = 48 * 60 * 60 * 1000;
     let articles = data.items.filter(item => {
       const pub = new Date(item.pubDate).getTime();
-      return (now - pub) <= h24;
+      return (now - pub) <= h48;
     }).slice(0, 3);
 
-    // If not enough from last 24h, take top 3 anyway
-    if (articles.length === 0) articles = data.items.slice(0, 3);
+    // Fallback: take top 3 regardless of date
+    if (articles.length < 2) articles = data.items.slice(0, 3);
 
     $('newsList').innerHTML = articles.map(item => {
       const pub = new Date(item.pubDate);
