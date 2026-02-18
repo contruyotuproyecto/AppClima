@@ -1039,13 +1039,23 @@ function checkAlerts(data) {
   const alerts = [];
   const wid = weather[0].id;
 
-  if (main.temp > 38) alerts.push('🌡️ Temperatura extremadamente alta. Mantente hidratado.');
-  if (unit === 'imperial' && main.temp > 100) alerts.push('🌡️ Temperatura muy alta. Precaución.');
-  if (main.temp < 0 && unit === 'metric') alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
-  if (wind.speed > 20) alerts.push('💨 Vientos fuertes detectados (>' + wind.speed.toFixed(0) + ' m/s).');
+  // Temperatura alta: solo dispara si realmente es extremo según la unidad
+  if (unit === 'metric' && main.temp > 38) alerts.push('🌡️ Temperatura extremadamente alta. Mantente hidratado.');
+  if (unit === 'imperial' && main.temp > 104) alerts.push('🌡️ Temperatura extremadamente alta. Mantente hidratado.');
+
+  // Temperatura baja
+  if (unit === 'metric' && main.temp < 0) alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
+  if (unit === 'imperial' && main.temp < 32) alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
+
+  // Vientos fuertes — solo si supera 15 m/s (54 km/h), que es viento fuerte real
+  if (wind.speed > 15) alerts.push('💨 Vientos fuertes detectados (' + wind.speed.toFixed(0) + ' m/s).');
+
+  // Tormentas y condiciones extremas
   if (wid >= 200 && wid < 300) alerts.push('⚡ Tormenta eléctrica activa en la zona.');
   if (wid >= 900 && wid < 910) alerts.push('🌀 Condición meteorológica extrema detectada.');
-  if (main.humidity > 90) alerts.push('💧 Humedad muy alta. Sensación de calor aumentada.');
+
+  // Humedad muy alta — subido a 95% para evitar falsos positivos en climas tropicales
+  if (main.humidity > 95) alerts.push('💧 Humedad extrema. Sensación de calor muy elevada.');
 
   if (alerts.length) {
     $('alertTitle').textContent = '⚠️ ' + (alerts.length > 1 ? 'Múltiples alertas climáticas' : 'Alerta climática');
