@@ -144,10 +144,13 @@
     .search-row {
       display: flex;
       gap: 0.75rem;
+      position: relative;
+      z-index: 10;
     }
     .search-input-wrap {
       position: relative;
       flex: 1;
+      z-index: 10;
     }
     .search-input-wrap i {
       position: absolute;
@@ -204,7 +207,7 @@
       border: 1px solid var(--glass-border);
       border-radius: var(--radius-sm);
       box-shadow: var(--shadow);
-      z-index: 100;
+      z-index: 500;
       list-style: none;
       overflow: hidden;
       max-height: 280px;
@@ -536,6 +539,102 @@
     .fc-range strong { color: var(--text); }
     .fc-desc { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.3rem; text-transform: capitalize; }
 
+
+    /* ===== NEWS SECTION ===== */
+    .news-card {
+      display: none;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      backdrop-filter: blur(20px);
+      animation: fadeUp 0.5s ease 0.2s both;
+      margin-bottom: 1.5rem;
+    }
+    .news-card.active { display: block; }
+
+    .news-list { display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem; }
+
+    .news-item {
+      display: flex;
+      gap: 1rem;
+      padding: 1rem;
+      background: var(--glass);
+      border: 1px solid var(--glass-border);
+      border-radius: var(--radius-sm);
+      text-decoration: none;
+      color: var(--text);
+      transition: var(--transition);
+      align-items: flex-start;
+    }
+    .news-item:hover {
+      border-color: var(--accent);
+      background: rgba(56,189,248,0.06);
+      transform: translateX(4px);
+    }
+    .news-thumb {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--bg3);
+    }
+    .news-thumb-placeholder {
+      width: 72px;
+      height: 72px;
+      border-radius: 10px;
+      flex-shrink: 0;
+      background: var(--bg3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+    }
+    .news-body { flex: 1; min-width: 0; }
+    .news-source {
+      font-size: 0.72rem;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 0.3rem;
+      font-weight: 600;
+    }
+    .news-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+      line-height: 1.4;
+      margin-bottom: 0.4rem;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .news-meta {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .news-loading {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    .news-loading i { color: var(--accent); margin-right: 0.4rem; }
+    .news-empty {
+      text-align: center;
+      padding: 1.5rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+    @media (max-width: 480px) {
+      .news-thumb, .news-thumb-placeholder { width: 56px; height: 56px; }
+      .news-title { font-size: 0.85rem; }
+    }
+
     /* ===== FOOTER ===== */
     footer {
       text-align: center;
@@ -745,6 +844,15 @@
     <div class="forecast-grid" id="forecastGrid"></div>
   </div>
 
+
+  <!-- NEWS SECTION -->
+  <div class="news-card" id="newsCard">
+    <div class="card-title"><i class="fas fa-newspaper"></i> Noticias climáticas — últimas 24h</div>
+    <div class="news-list" id="newsList">
+      <div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Buscando noticias...</div>
+    </div>
+  </div>
+
   <!-- FOOTER -->
   <footer>
     <p>© 2025 ClimaApp · Datos: <a href="https://openweathermap.org/" target="_blank">OpenWeather</a></p>
@@ -822,6 +930,7 @@ const mainCard = $('mainCard');
 const chartCard = $('chartCard');
 const mapCard = $('mapCard');
 const forecastCard = $('forecastCard');
+const newsCard = $('newsCard');
 
 // ===== BG CANVAS ANIMATION =====
 const canvas = $('bgCanvas');
@@ -1007,6 +1116,7 @@ function showLoading() {
   chartCard.classList.remove('active');
   mapCard.classList.remove('active');
   forecastCard.classList.remove('active');
+  newsCard.classList.remove('active');
   alertBanner.classList.remove('active');
 }
 function hideLoading() { loading.classList.remove('active'); }
@@ -1072,6 +1182,7 @@ function renderWeather(data) {
   const windUnit = unit === 'metric' ? 'm/s' : 'mph';
   setWeatherMode(weather[0].icon);
   checkAlerts(data);
+  fetchNews(name, sys.country);
 
   $('cityName').textContent = `${name}, ${sys.country}`;
   $('coordsText').textContent = `${coord.lat.toFixed(2)}°, ${coord.lon.toFixed(2)}°`;
@@ -1247,6 +1358,91 @@ async function fetchByCoords(lat, lon) {
     renderWeather(currentData);
     saveHistory(`${currentData.name}, ${currentData.sys.country}`);
   } catch (e) { showError(e.message); }
+}
+
+
+// ===== NEWS =====
+async function fetchNews(cityName, countryCode) {
+  try {
+    newsCard.classList.add('active');
+    $('newsList').innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Buscando noticias...</div>';
+
+    // Build search query: city + country + weather keywords
+    const countryNames = {
+      'CR':'Costa Rica','MX':'México','AR':'Argentina','CO':'Colombia',
+      'PE':'Perú','CL':'Chile','VE':'Venezuela','EC':'Ecuador','BO':'Bolivia',
+      'PY':'Paraguay','UY':'Uruguay','PA':'Panamá','SV':'El Salvador',
+      'HN':'Honduras','NI':'Nicaragua','GT':'Guatemala','DO':'República Dominicana',
+      'CU':'Cuba','ES':'España','US':'Estados Unidos','GB':'Reino Unido',
+      'FR':'Francia','DE':'Alemania','IT':'Italia','BR':'Brasil',
+      'JP':'Japón','CN':'China','AU':'Australia','CA':'Canadá'
+    };
+    const countryName = countryNames[countryCode] || countryCode;
+    const query = encodeURIComponent(`clima ${cityName} ${countryName}`);
+    const rssUrl = `https://news.google.com/rss/search?q=${query}&hl=es&gl=${countryCode}&ceid=${countryCode}:es`;
+    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}&count=5`;
+
+    const res = await fetch(apiUrl);
+    if (!res.ok) throw new Error('No se pudieron cargar las noticias');
+    const data = await res.json();
+
+    if (!data.items || data.items.length === 0) {
+      $('newsList').innerHTML = '<div class="news-empty">📰 No se encontraron noticias recientes para esta ubicación.</div>';
+      return;
+    }
+
+    // Filter last 24h and take up to 3
+    const now = Date.now();
+    const h24 = 24 * 60 * 60 * 1000;
+    let articles = data.items.filter(item => {
+      const pub = new Date(item.pubDate).getTime();
+      return (now - pub) <= h24;
+    }).slice(0, 3);
+
+    // If not enough from last 24h, take top 3 anyway
+    if (articles.length === 0) articles = data.items.slice(0, 3);
+
+    $('newsList').innerHTML = articles.map(item => {
+      const pub = new Date(item.pubDate);
+      const timeAgo = getTimeAgo(pub);
+      const source = item.source || extractSource(item.link);
+      const hasThumb = item.thumbnail && item.thumbnail.length > 10;
+      const weatherEmojis = ['⛅','🌧️','☀️','🌩️','❄️','🌪️','🌊'];
+      const emoji = weatherEmojis[Math.floor(Math.random() * weatherEmojis.length)];
+
+      return `
+        <a class="news-item" href="${item.link}" target="_blank" rel="noopener noreferrer">
+          ${hasThumb
+            ? `<img class="news-thumb" src="${item.thumbnail}" alt="noticia" loading="lazy" onerror="this.style.display='none'">`
+            : `<div class="news-thumb-placeholder">${emoji}</div>`
+          }
+          <div class="news-body">
+            <div class="news-source">${source}</div>
+            <div class="news-title">${item.title}</div>
+            <div class="news-meta">
+              <i class="fas fa-clock"></i> ${timeAgo}
+            </div>
+          </div>
+        </a>
+      `;
+    }).join('');
+
+  } catch (err) {
+    console.warn('News error:', err);
+    $('newsList').innerHTML = '<div class="news-empty">📰 No se pudieron cargar las noticias ahora.</div>';
+  }
+}
+
+function getTimeAgo(date) {
+  const diff = Math.floor((Date.now() - date.getTime()) / 1000);
+  if (diff < 3600) return `Hace ${Math.floor(diff / 60)} min`;
+  if (diff < 86400) return `Hace ${Math.floor(diff / 3600)} h`;
+  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' });
+}
+
+function extractSource(url) {
+  try { return new URL(url).hostname.replace('www.', ''); }
+  catch { return 'Noticia'; }
 }
 
 // ===== EVENTS =====
