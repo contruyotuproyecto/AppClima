@@ -624,6 +624,19 @@
       font-size: 0.875rem;
     }
     .news-loading i { color: var(--accent); margin-right: 0.4rem; }
+
+    .news-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--accent3), #059669);
+      color: white;
+      font-size: 0.62rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      margin-left: 0.4rem;
+      vertical-align: middle;
+    }
     .news-empty {
       text-align: center;
       padding: 1.5rem;
@@ -1432,7 +1445,18 @@ async function fetchNews(cityName, countryCode) {
       rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
     }
 
-    const apiBase = 'https://api.rss2json.com/v1/api.json?rss_url=';
+    // Cache-busting timestamp to force fresh results from rss2json
+    const cacheBust = Math.floor(Date.now() / (15 * 60 * 1000)); // changes every 15 min
+    const apiBase = `https://api.rss2json.com/v1/api.json?_=${cacheBust}&rss_url=`;
+
+    // Helper: sort items by pubDate descending (newest first)
+    function sortByDate(items) {
+      return [...items].sort((a, b) => {
+        const da = new Date(a.pubDate || 0).getTime();
+        const db = new Date(b.pubDate || 0).getTime();
+        return db - da;
+      });
+    }
 
     // Try city-specific first
     let data = null;
@@ -1441,11 +1465,13 @@ async function fetchNews(cityName, countryCode) {
       if (res.ok) data = await res.json();
     } catch(e) {}
 
-    // Filter only weather-relevant articles for the location
+    // Filter relevant + sort by date
     let articles = [];
     if (data && data.items && data.items.length > 0) {
-      articles = data.items.filter(item =>
-        isRelevantArticle(item.title, cityName, countryName, countryCode)
+      articles = sortByDate(
+        data.items.filter(item =>
+          isRelevantArticle(item.title, cityName, countryName, countryCode)
+        )
       ).slice(0, 3);
     }
 
@@ -1456,26 +1482,31 @@ async function fetchNews(cityName, countryCode) {
         if (res2.ok) {
           const data2 = await res2.json();
           if (data2.items && data2.items.length > 0) {
-            const fallbackArticles = data2.items.filter(item =>
-              isRelevantArticle(item.title, cityName, countryName, countryCode)
+            const fallbackArticles = sortByDate(
+              data2.items.filter(item =>
+                isRelevantArticle(item.title, cityName, countryName, countryCode)
+              )
             ).slice(0, 3);
-            // Merge and deduplicate by title
             const titles = new Set(articles.map(a => a.title));
             fallbackArticles.forEach(a => { if (!titles.has(a.title)) articles.push(a); });
-            articles = articles.slice(0, 3);
+            articles = sortByDate(articles).slice(0, 3);
           }
         }
       } catch(e) {}
     }
 
-    // Last resort: take top items from first result regardless
+    // Last resort: newest 3 regardless of relevance filter
     if (articles.length === 0 && data && data.items) {
-      articles = data.items.slice(0, 3);
+      articles = sortByDate(data.items).slice(0, 3);
     }
+
+    const now = Date.now();
+    const h24 = 24 * 60 * 60 * 1000;
 
     $('newsList').innerHTML = articles.map(item => {
       const pub = new Date(item.pubDate);
       const timeAgo = getTimeAgo(pub);
+      const isRecent = (now - pub.getTime()) <= h24;
       const source = item.source || extractSource(item.link);
       const hasThumb = item.thumbnail && item.thumbnail.length > 10;
       const weatherEmojis = ['⛅','🌧️','☀️','🌩️','❄️','🌪️','🌊'];
@@ -1488,7 +1519,10 @@ async function fetchNews(cityName, countryCode) {
             : `<div class="news-thumb-placeholder">${emoji}</div>`
           }
           <div class="news-body">
-            <div class="news-source">${source}</div>
+            <div class="news-source">
+              ${source}
+              ${isRecent ? '<span class="news-badge">RECIENTE</span>' : ''}
+            </div>
             <div class="news-title">${item.title}</div>
             <div class="news-meta">
               <i class="fas fa-clock"></i> ${timeAgo}
