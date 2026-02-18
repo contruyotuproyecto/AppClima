@@ -1174,11 +1174,12 @@ function checkAlerts(data) {
   // Temperatura baja: < 0°C equivale a < 32°F
   if (tempC < 0) alerts.push('🧊 Temperatura bajo cero. Riesgo de heladas.');
 
-  // Vientos fuertes: wind.speed siempre viene en m/s desde la API independiente de la unidad
-  // 15 m/s = 54 km/h = 33 mph — viento fuerte real
-  if (wind.speed > 15) {
+  // Vientos fuertes: OpenWeather devuelve wind.speed en m/s (metric) o mph (imperial)
+  // Convertir siempre a m/s para comparar con un único umbral: 15 m/s = 54 km/h = 33 mph
+  const windMs = unit === 'imperial' ? wind.speed / 2.237 : wind.speed;
+  if (windMs > 15) {
     const wspd = unit === 'imperial'
-      ? (wind.speed * 2.237).toFixed(0) + ' mph'
+      ? wind.speed.toFixed(0) + ' mph'
       : wind.speed.toFixed(0) + ' m/s';
     alerts.push('💨 Vientos fuertes detectados (' + wspd + ').');
   }
@@ -1385,57 +1386,92 @@ async function fetchByCoords(lat, lon) {
 
 
 // ===== NEWS =====
+// Helper: check if article is relevant to location
+function isRelevantArticle(title, cityName, countryName, countryCode) {
+  const norm = s => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  const t = norm(title);
+  const city = norm(cityName);
+  const country = norm(countryName);
+  const weatherWords = ['clima','tiempo','temperatura','lluvia','tormenta','pronostico',
+    'weather','forecast','rain','storm','temperature','snow','wind'];
+  const hasWeather = weatherWords.some(w => t.includes(w));
+  const hasLocation = t.includes(city) || t.includes(country) || t.includes(norm(countryCode));
+  return hasWeather && hasLocation;
+}
+
 async function fetchNews(cityName, countryCode) {
   try {
     newsCard.classList.add('active');
     $('newsList').innerHTML = '<div class="news-loading"><i class="fas fa-spinner fa-spin"></i> Buscando noticias...</div>';
 
     const countryNames = {
-      'CR':'Costa Rica','MX':'México','AR':'Argentina','CO':'Colombia',
-      'PE':'Perú','CL':'Chile','VE':'Venezuela','EC':'Ecuador','BO':'Bolivia',
-      'PY':'Paraguay','UY':'Uruguay','PA':'Panamá','SV':'El Salvador',
-      'HN':'Honduras','NI':'Nicaragua','GT':'Guatemala','DO':'República Dominicana',
+      'CR':'Costa Rica','MX':'Mexico','AR':'Argentina','CO':'Colombia',
+      'PE':'Peru','CL':'Chile','VE':'Venezuela','EC':'Ecuador','BO':'Bolivia',
+      'PY':'Paraguay','UY':'Uruguay','PA':'Panama','SV':'El Salvador',
+      'HN':'Honduras','NI':'Nicaragua','GT':'Guatemala','DO':'Republica Dominicana',
       'CU':'Cuba','ES':'España','US':'United States','GB':'United Kingdom',
       'FR':'France','DE':'Germany','IT':'Italy','BR':'Brasil',
       'JP':'Japan','CN':'China','AU':'Australia','CA':'Canada'
     };
 
-    // Use English for non-Spanish countries for better results
     const spanishCountries = ['CR','MX','AR','CO','PE','CL','VE','EC','BO','PY','UY','PA','SV','HN','NI','GT','DO','CU','ES'];
     const isSpanish = spanishCountries.includes(countryCode);
     const countryName = countryNames[countryCode] || countryCode;
 
-    let query, rssUrl;
+    // Build two queries: specific (city) and fallback (country)
+    let cityQuery, countryQuery, rssUrl, rssUrlFallback;
     if (isSpanish) {
-      query = encodeURIComponent(`clima ${cityName} ${countryName}`);
-      rssUrl = `https://news.google.com/rss/search?q=${query}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es`;
+      cityQuery = encodeURIComponent(`clima "${cityName}" ${countryName}`);
+      countryQuery = encodeURIComponent(`clima tiempo hoy ${countryName}`);
+      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es`;
+      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=es-419&gl=${countryCode}&ceid=${countryCode}:es`;
     } else {
-      query = encodeURIComponent(`weather ${cityName} ${countryName}`);
-      rssUrl = `https://news.google.com/rss/search?q=${query}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
+      cityQuery = encodeURIComponent(`weather "${cityName}" ${countryName}`);
+      countryQuery = encodeURIComponent(`weather forecast today ${countryName}`);
+      rssUrl = `https://news.google.com/rss/search?q=${cityQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
+      rssUrlFallback = `https://news.google.com/rss/search?q=${countryQuery}&hl=en&gl=${countryCode}&ceid=${countryCode}:en`;
     }
 
-    // rss2json free tier: no count param needed, returns 10 by default
-    const apiUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(rssUrl)}`;
+    const apiBase = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-    const res = await fetch(apiUrl);
-    if (!res.ok) throw new Error('Error de red');
-    const data = await res.json();
+    // Try city-specific first
+    let data = null;
+    try {
+      const res = await fetch(apiBase + encodeURIComponent(rssUrl));
+      if (res.ok) data = await res.json();
+    } catch(e) {}
 
-    if (!data.items || data.items.length === 0 || data.status === 'error') {
-      $('newsList').innerHTML = '<div class="news-empty">📰 No se encontraron noticias para esta ubicación.</div>';
-      return;
+    // Filter only weather-relevant articles for the location
+    let articles = [];
+    if (data && data.items && data.items.length > 0) {
+      articles = data.items.filter(item =>
+        isRelevantArticle(item.title, cityName, countryName, countryCode)
+      ).slice(0, 3);
     }
 
-    // Filter last 48h (more flexible) and take up to 3
-    const now = Date.now();
-    const h48 = 48 * 60 * 60 * 1000;
-    let articles = data.items.filter(item => {
-      const pub = new Date(item.pubDate).getTime();
-      return (now - pub) <= h48;
-    }).slice(0, 3);
+    // Fallback to country-level search if not enough relevant results
+    if (articles.length < 2) {
+      try {
+        const res2 = await fetch(apiBase + encodeURIComponent(rssUrlFallback));
+        if (res2.ok) {
+          const data2 = await res2.json();
+          if (data2.items && data2.items.length > 0) {
+            const fallbackArticles = data2.items.filter(item =>
+              isRelevantArticle(item.title, cityName, countryName, countryCode)
+            ).slice(0, 3);
+            // Merge and deduplicate by title
+            const titles = new Set(articles.map(a => a.title));
+            fallbackArticles.forEach(a => { if (!titles.has(a.title)) articles.push(a); });
+            articles = articles.slice(0, 3);
+          }
+        }
+      } catch(e) {}
+    }
 
-    // Fallback: take top 3 regardless of date
-    if (articles.length < 2) articles = data.items.slice(0, 3);
+    // Last resort: take top items from first result regardless
+    if (articles.length === 0 && data && data.items) {
+      articles = data.items.slice(0, 3);
+    }
 
     $('newsList').innerHTML = articles.map(item => {
       const pub = new Date(item.pubDate);
