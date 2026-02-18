@@ -1,242 +1,151 @@
-# Weather App ☁️
-
-Una aplicación web de clima moderna, responsive y con tema claro/oscuro, desarrollada con HTML5, CSS3 y JavaScript vanilla.
-
-## 🌟 Características
-
-* ✅ Búsqueda de clima por ciudad
-* ✅ Muestra clima actual con datos detallados
-* ✅ Pronóstico de 5 días
-* ✅ Tema claro/oscuro (Dark Mode)
-* ✅ Cambio entre Celsius y Fahrenheit
-* ✅ Diseño completamente responsive
-* ✅ Interfaz moderna y atractiva
-* ✅ Geolocalización automática (opcional)
-* ✅ Datos en tiempo real de OpenWeather API
-
-## 🛠️ Tecnologías Utilizadas
-
-* **HTML5** - Estructura semántica
-* **CSS3** - Diseño responsive con Grid y Flexbox
-* **JavaScript (Vanilla)** - Lógica y API integration
-* **OpenWeather API** - Datos del clima
-* **Font Awesome 6** - Iconografía
-
-## 🚀 Instalación y Uso
-
-### 1. Clonar o descargar el proyecto
-
-```bash
-git clone https://github.com/pausherl/weather-app.git
-cd weather-app
-```
-
-### 2. Obtener API Key
-
-1. Ve a https://openweathermap.org/api
-2. Regístrate (gratis, sin tarjeta de crédito)
-3. Copia tu **Default API Key**
-
-### 3. Configurar API Key
-
-Abre el archivo `js/script.js` y reemplaza:
-
-```javascript
-const API_KEY = 'TU_API_KEY_AQUI';
-```
-
-por tu API key:
-
-```javascript
-const API_KEY = 'abc123def456...'
-```
-
-### 4. Ejecutar la aplicación
-
-Opción A: Abrir directamente
-
-```bash
-# Simplemente abre index.html en tu navegador
-open index.html
-```
-
-Opción B: Usar un servidor local (recomendado)
-
-```bash
-# Con Python 3
-python -m http.server 8000
-
-# Con Node.js (si tienes http-server instalado)
-http-server
-
-# Luego abre: http://localhost:8000
-```
-
-## 📱 Responsive Design
-
-La aplicación se adapta perfectamente a:
-
-* 🖥️ **Desktops** (1200px+)
-* 💻 **Tablets** (768px - 1199px)
-* 📱 **Móviles** (320px - 767px)
-
-## 🎨 Temas
-
-### Modo Claro (Por defecto)
-
-* Fondo blanco limpio
-* Texto oscuro legible
-* Colores acento azules
-
-### Modo Oscuro
-
-* Fondo oscuro elegante
-* Texto claro
-* Colores acento ajustados
-
-El tema se guarda automáticamente en `localStorage`.
-
-## 🔍 Cómo Funciona
-
-### Búsqueda de Ciudad
-
-```javascript
-// El usuario ingresa una ciudad y presiona Enter o clic
-fetchCurrentWeather('San José, Costa Rica')
-```
-
-La app obtiene:
-
-1. **Clima Actual** - Temperatura, humedad, viento, etc.
-2. **Pronóstico 5 días** - Temperatura mín/máx por día
-3. **Datos detallados** - Visibilidad, presión, nubosidad, amanecer/atardecer
-
-### Cambio de Unidades
-
-```javascript
-// Celsius (por defecto)
-currentUnit = 'metric'
-
-// Fahrenheit
-currentUnit = 'imperial'
-```
-
-### Dark Mode
-
-Se guarda en `localStorage` para persistencia entre sesiones:
-
-```javascript
-localStorage.setItem('theme', isDark ? 'dark' : 'light');
-```
-
-## 📁 Estructura del Proyecto
-
-```
-weather-app/
-├── index.html          # Página principal
-├── css/
-│   └── style.css       # Estilos responsive + dark mode
-├── js/
-│   └── script.js       # Lógica y API integration
-├── assets/             # Imágenes/iconos (si los necesitas)
-├── README.md           # Este archivo
-├── .gitignore          # Archivos ignorados en Git
-└── LICENSE             # Licencia (opcional)
-```
-
-## 🔧 Variables de CSS
-
-Las variables CSS permiten cambios globales fáciles:
-
-```css
-:root {
-    --bg-primary: #ffffff;
-    --text-primary: #1a1a1a;
-    --accent-color: #3498db;
-    --transition: all 0.3s ease;
-}
-
-/* Dark Mode */
-body.dark-theme {
-    --bg-primary: #1a1a1a;
-    --text-primary: #ffffff;
-    /* ... etc */
-}
-```
-
-## 🌐 API Endpoints Utilizados
-
-### Clima Actual
-
-```
-GET /weather?q={city}&appid={API_KEY}&units={units}&lang=es
-```
-
-### Pronóstico 5 días
-
-```
-GET /forecast?lat={lat}&lon={lon}&appid={API_KEY}&units={units}&lang=es
-```
-
-**Unidades:**
-
-* `metric` → Celsius, m/s
-* `imperial` → Fahrenheit, mph
-
-## ⚡ Mejoras Futuras
-
-* [ ] Búsqueda de historial
-* [ ] Guardar ciudades favoritas
-* [ ] Notificaciones de alertas de clima
-* [ ] Mapa interactivo
-* [ ] Radar de lluvia
-* [ ] App offline con Service Workers
-* [ ] Progressive Web App (PWA)
-* [ ] Gráficos de temperatura por hora
-
-## 🐛 Solución de Problemas
-
-### Error: "Ciudad no encontrada"
-
-* Verifica la ortografía del nombre de la ciudad
-* Intenta con formato: "Ciudad, País" (ej: "San José, Costa Rica")
-
-### Error: "API Key inválida"
-
-* Confirma que copiaste correctamente tu API key
-* Verifica en https://openweathermap.org/api/key
-
-### No aparece el clima
-
-* Abre la consola del navegador (F12) para ver errores
-* Verifica tu conexión a internet
-
-## 📄 Licencia
-
-Este proyecto está disponible bajo la licencia MIT.
-
-## 🤝 Contribuciones
-
-¡Las contribuciones son bienvenidas! Siéntete libre de:
-
-1. Fork el proyecto
-2. Crear una rama (`git checkout -b feature/MejorFeature`)
-3. Commit tus cambios (`git commit -m 'Agrega MejorFeature'`)
-4. Push a la rama (`git push origin feature/MejorFeature`)
-5. Abrir un Pull Request
-
-## 👨‍💻 Autor
-
-Desarrollado como proyecto educativo para aprender JavaScript, API REST, y diseño responsivo.
-
-## 🙏 Agradecimientos
-
-* [OpenWeather](https://openweathermap.org/) por la API de clima
-* [Font Awesome](https://fontawesome.com/) por los iconos
-* La comunidad de desarrolladores
+# 🌤️ ClimaApp — Paulo Jimenez
+
+![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-deployed-brightgreen?logo=github&logoColor=white)
+![HTML5](https://img.shields.io/badge/HTML5-E34F26?logo=html5&logoColor=white)
+![CSS3](https://img.shields.io/badge/CSS3-1572B6?logo=css3&logoColor=white)
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black)
+![Chart.js](https://img.shields.io/badge/Chart.js-FF6384?logo=chartdotjs&logoColor=white)
+![Leaflet](https://img.shields.io/badge/Leaflet-199900?logo=leaflet&logoColor=white)
+![OpenWeather](https://img.shields.io/badge/OpenWeather-API-orange)
+
+Aplicación web de clima en tiempo real con diseño **glassmorphism**, fondo animado dinámico según las condiciones del tiempo, mapa interactivo, gráfica de temperatura y sistema de alertas para condiciones extremas.
 
 ---
 
-**¿Te gustó este proyecto?** Dale una ⭐ en GitHub!
+## 🚀 Demo
 
-Para más información, visita la [documentación de OpenWeather](https://openweathermap.org/api).
+👉 [Ver demo en vivo](https://contruyotuproyecto.github.io/AppClima/)
+
+---
+
+## 📸 Vista previa
+
+> Diseño oscuro con glassmorphism, fondo animado (lluvia, nieve, tormenta, sol), mapa Leaflet y gráfica Chart.js integrados.
+
+---
+
+## ✨ Características
+
+### 🎨 Visual
+- **Fondo animado dinámico** — cambia automáticamente según el clima:
+  - ☀️ Sol → estrellas parpadeantes
+  - 🌧️ Lluvia → gotas cayendo animadas
+  - ⛈️ Tormenta → gotas + destellos de relámpago
+  - ❄️ Nieve → copos flotantes
+  - ☁️ Nublado → nubes deslizándose
+- **Glassmorphism** — cards con fondo translúcido y backdrop blur
+- **Color de acento dinámico** — cambia según el tipo de clima detectado
+- **Ícono del clima flotante** — animación suave de levitación
+- **Tipografía** — Syne (display) + DM Sans (cuerpo)
+
+### 🔍 Búsqueda
+- **Autocompletado inteligente** con más de 80 ciudades populares
+- **Lista amplia de Costa Rica** — Gran Área Metropolitana, Guanacaste, Pacífico, Caribe, Zona Norte, Occidente
+- **Historial de búsquedas** — guarda las últimas 6 ciudades en localStorage, con opción de eliminar cada una
+- **Geolocalización automática** — detecta tu ubicación al cargar la página con botón dedicado en el header
+- **Errores inteligentes** — cuando falla una búsqueda muestra sugerencias de ciudades similares con botones clicables
+
+### 📊 Datos del clima
+- Temperatura actual, sensación térmica, mín/máx
+- Humedad, viento, visibilidad, presión, nubosidad
+- Hora de amanecer y atardecer
+- **Gráfica de temperatura próximas 24h** — temperatura real + sensación térmica con Chart.js
+- **Mapa interactivo Leaflet** — ubicación exacta de la ciudad con marcador animado
+- **Pronóstico de 5 días**
+- **⚠️ Alertas de clima extremo** — detecta automáticamente:
+  - Temperatura muy alta o bajo cero
+  - Vientos fuertes (> 20 m/s)
+  - Tormentas eléctricas activas
+  - Humedad extrema (> 90%)
+
+### 📱 Responsive
+- Adaptado para móvil, tablet y escritorio
+- En móvil el filtro de unidad se posiciona debajo del logo
+- Gráfica y mapa apilados en pantallas menores a 860px
+- Pronóstico compacto en pantallas pequeñas
+
+---
+
+## 🗂️ Estructura del proyecto
+
+```
+AppClima/
+├── assets/
+│   └── jpdev.jpeg          # Logo del desarrollador
+├── README.md
+└── index.html              # App completa (HTML + CSS + JS en un solo archivo)
+```
+
+> La versión 3 consolidó todo en un único `index.html` para simplificar el mantenimiento y el despliegue.
+
+---
+
+## 🛠️ Tecnologías
+
+| Tecnología | Uso |
+|---|---|
+| HTML5 + CSS3 + JS Vanilla | Base de la aplicación |
+| [OpenWeather API](https://openweathermap.org/api) | Datos de clima en tiempo real |
+| [Chart.js 4.4](https://www.chartjs.org/) | Gráfica de temperatura |
+| [Leaflet 1.9](https://leafletjs.com/) | Mapa interactivo |
+| [Font Awesome 6.4](https://fontawesome.com/) | Iconografía |
+| [Google Fonts](https://fonts.google.com/) | Syne + DM Sans |
+| Canvas API | Animación de fondo dinámica |
+| localStorage | Historial de búsquedas y preferencias |
+
+---
+
+## ⚙️ Instalación y uso local
+
+```bash
+# Clonar el repositorio
+git clone https://github.com/contruyotuproyecto/AppClima.git
+cd AppClima
+
+# Abrir directamente en el navegador
+open index.html
+# o simplemente arrastra el archivo index.html a tu navegador
+```
+
+> No requiere servidor ni dependencias npm. Es una app 100% frontend estática.
+
+---
+
+## 🔑 API Key
+
+La app usa la API gratuita de [OpenWeather](https://openweathermap.org/api). La key está ofuscada en el código mediante fragmentos codificados en base64.
+
+Para usar tu propia key reemplaza el array `_k` en el `index.html`:
+
+```js
+// Reemplaza con tu propia API key de openweathermap.org
+const _k = 'TU_API_KEY_AQUI';
+```
+
+> Para mayor seguridad en producción se recomienda usar un backend como proxy que maneje la key del lado del servidor.
+
+---
+
+## 📦 Historial de versiones
+
+| Versión | Cambios |
+|---|---|
+| v3.0 | Rediseño completo: glassmorphism, fondo animado, Chart.js, Leaflet, alertas extremas, historial |
+| v2.0 | Autocompletado, ciudades CR ampliadas, errores inteligentes con sugerencias, API key ofuscada |
+| v1.0 | Versión inicial: búsqueda de ciudades, pronóstico 5 días, modo oscuro/claro, geolocalización |
+
+---
+
+## 👨‍💻 Autor
+
+**Paulo Jimenez** — Desarrollador Web Full Stack
+
+- 🌐 [ConstruyeTuWeb.com](https://construyetuweb.com)
+- 💻 [GitHub @contruyotuproyecto](https://github.com/contruyotuproyecto)
+- 💬 [WhatsApp](https://walink.co/b4a464)
+
+---
+
+## 📄 Licencia
+
+MIT — libre para usar, modificar y distribuir con atribución al autor.
