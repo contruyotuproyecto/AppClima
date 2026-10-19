@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://appclima.laweb.top/sitemap.xml
+Sitemap: https://appclima.labweb.top/sitemap.xml
