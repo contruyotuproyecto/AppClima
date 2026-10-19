@@ -349,7 +349,13 @@
     .autocomplete-item:last-child { border-bottom: none; }
     .autocomplete-item:hover { background: rgba(56,189,248,0.08); color: var(--text); }
     .autocomplete-item.is-active { background: rgba(56,189,248,0.14); color: var(--text); }
-    .autocomplete-item i { color: var(--accent); font-size: 0.8rem; }
+    .autocomplete-item i {
+      flex: 0 0 1rem;
+      color: var(--accent);
+      font-size: 0.8rem;
+      text-align: center;
+    }
+    .autocomplete-item span { min-width: 0; overflow-wrap: anywhere; }
 
     /* History chips */
     .history-row {
@@ -1360,7 +1366,7 @@ function showAC(query) {
     const matches = CITIES.filter(c => norm(c).includes(norm(query))).slice(0, 8);
     if (!matches.length) { closeAutocomplete(); return; }
     acList.innerHTML = matches.map((city, index) =>
-      `<li class="autocomplete-item" id="city-option-${index}" role="option" aria-selected="false" data-city="${city}"><i class="fas fa-location-dot" aria-hidden="true"></i>${city}</li>`
+      `<li class="autocomplete-item" id="city-option-${index}" role="option" aria-selected="false" data-city="${city}"><i class="fas fa-location-dot" aria-hidden="true"></i><span>${city}</span></li>`
     ).join('');
     acList.style.display = 'block';
     cityInput.setAttribute('aria-expanded', 'true');
