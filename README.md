@@ -15,14 +15,14 @@ Aplicación web de clima en tiempo real con diseño **glassmorphism**, fondo ani
 
 ## 🚀 Demo
 
-👉 [Ver demo en vivo](https://contruyotuproyecto.github.io/AppClima/)
+👉 [Ver demo en vivo](https://labweb.top/)
 
 ---
 
 ## ✨ Características
 
 ### 🎨 Visual
-- **Fondo animado dinámico** en canvas — cambia automáticamente según el clima:
+- **Fondo dinámico** en canvas — cambia según el clima y se pausa en pestañas ocultas o cuando se prefiere movimiento reducido:
   - ☀️ Sol → estrellas parpadeantes
   - 🌧️ Lluvia → gotas cayendo animadas
   - ⛈️ Tormenta → gotas + destellos de relámpago
@@ -30,7 +30,7 @@ Aplicación web de clima en tiempo real con diseño **glassmorphism**, fondo ani
   - ☁️ Nublado → nubes deslizándose
 - **Glassmorphism** — cards con fondo translúcido y backdrop blur
 - **Color de acento dinámico** — cambia según el tipo de clima detectado
-- **Ícono del clima flotante** — animación suave de levitación
+- **Ícono del clima** con movimiento suave, desactivado al preferir menos movimiento
 - **Header sticky** — se mantiene visible al hacer scroll con fondo semitransparente
 - **Tipografía** — Syne (display) + DM Sans (cuerpo)
 
@@ -38,7 +38,8 @@ Aplicación web de clima en tiempo real con diseño **glassmorphism**, fondo ani
 - **Autocompletado inteligente** con más de 80 ciudades populares
 - **Lista amplia de Costa Rica** — GAM, Guanacaste, Pacífico, Caribe, Zona Norte, Occidente
 - **Historial de búsquedas** — guarda las últimas 6 ciudades con opción de eliminar
-- **Geolocalización automática** — detecta ubicación al cargar y con botón dedicado en el header
+- **Geolocalización respetuosa** — conserva la carga automática si ya existe permiso; solicita uno nuevo solo desde el botón del header
+- **Inicio guiado** — sugerencias de ciudades, búsqueda etiquetada y controles de teclado para el autocompletado
 - **Errores inteligentes** — muestra sugerencias de ciudades similares con chips clicables
 - **Z-index corregido** — autocompletado siempre visible sobre cualquier elemento
 
@@ -76,6 +77,7 @@ Detecta y notifica automáticamente condiciones peligrosas. Funciona igual en °
 
 ### 📱 Responsive
 - Header apila verticalmente en móvil: logo arriba, selector de unidad abajo
+- Inicio y pie adaptados a la altura de pantalla, con controles cómodos para tocar
 - Gráfica y mapa en columna en pantallas < 860px
 - Pronóstico con scroll horizontal en móvil (5 días siempre visibles)
 - Stats y details en grid 2 columnas en móvil
@@ -92,7 +94,7 @@ AppClima/
 └── index.html              # App completa (HTML + CSS + JS en un solo archivo)
 ```
 
-> Todo consolidado en un único `index.html` — sin dependencias npm, sin build tools, listo para GitHub Pages.
+> Todo consolidado en un único `index.html` — sin dependencias npm ni build tools. El sitio se publica con GitHub Pages bajo el dominio `labweb.top`.
 
 ---
 
