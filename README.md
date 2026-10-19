@@ -15,7 +15,7 @@ Aplicación web de clima en tiempo real con diseño **glassmorphism**, fondo ani
 
 ## 🚀 Demo
 
-👉 [Ver demo en vivo](https://labweb.top/)
+👉 [Ver demo en vivo](https://appclima.laweb.top/)
 
 ---
 
@@ -94,7 +94,7 @@ AppClima/
 └── index.html              # App completa (HTML + CSS + JS en un solo archivo)
 ```
 
-> Todo consolidado en un único `index.html` — sin dependencias npm ni build tools. El sitio se publica con GitHub Pages bajo el dominio `labweb.top`.
+> Todo consolidado en un único `index.html` — sin dependencias npm ni build tools. El sitio se publica con GitHub Pages bajo el subdominio `appclima.laweb.top`.
 
 ---
 
